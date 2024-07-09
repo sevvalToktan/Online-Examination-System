@@ -1,0 +1,128 @@
+Introduction
+
+This guide provides step-by-step instructions on how to set up and run the Online Examination System application. This system allows students and teachers to register, log in, manage exams, and more.
+
+Prerequisites
+
+Before you begin, make sure you have the following installed:
+
+Node.js (version 12.x or higher)
+MySQL (version 5.7 or higher)
+Setup Instructions
+
+
+Install Node.js Dependencies
+Install the necessary Node.js packages using npm:
+
+npm install
+
+Set Up the MySQL Database
+Start MySQL Server: Ensure your MySQL server is running.
+
+Create Database: Create a database named examination. You can do this via the MySQL command line or a database management tool like phpMyAdmin.
+
+CREATE DATABASE examination;
+
+Create Tables: Use the following SQL commands to create the necessary tables in the examination database:
+
+CREATE TABLE Students (
+student_id INT AUTO_INCREMENT PRIMARY KEY,
+Fname VARCHAR(255),
+Lname VARCHAR(255),
+e_mail VARCHAR(255),
+Pnumber VARCHAR(15)
+);
+
+CREATE TABLE Teacher (
+teacher_id INT AUTO_INCREMENT PRIMARY KEY,
+Fname VARCHAR(255),
+Lname VARCHAR(255),
+e_mail VARCHAR(255),
+Pnumber VARCHAR(15)
+);
+
+CREATE TABLE Register (
+id INT AUTO_INCREMENT PRIMARY KEY,
+student_id INT,
+teacher_id INT,
+email VARCHAR(255),
+password VARCHAR(255),
+user_type VARCHAR(50)
+);
+
+CREATE TABLE Exam (
+exam_id INT AUTO_INCREMENT PRIMARY KEY,
+subject VARCHAR(255),
+date DATE,
+time TIME,
+duration INT
+);
+
+CREATE TABLE exam_questions (
+question_id INT AUTO_INCREMENT PRIMARY KEY,
+exam_id INT,
+Qtest TEXT,
+CorAnswer CHAR(1),
+op_a TEXT,
+op_b TEXT,
+op_c TEXT,
+op_d TEXT,
+points INT
+);
+
+CREATE TABLE ExamAssignments (
+student_id INT,
+exam_id INT,
+PRIMARY KEY (student_id, exam_id)
+);
+
+CREATE TABLE ExamResults (
+result_id INT AUTO_INCREMENT PRIMARY KEY,
+student_id INT,
+exam_id INT,
+score DECIMAL(5,2)
+);
+
+Configure Database Connection
+In the app.js file, ensure the MySQL database connection details are correct:
+
+const db = mysql.createConnection({
+host: 'localhost',
+user: 'root',
+password: '1234',
+database: 'examination'
+});
+
+Adjust the user, password, and other parameters according to your MySQL configuration.
+
+Start the Application
+Start the Node.js application using the following command:
+
+node app.js
+
+Access the Application
+Open your web browser and navigate to:
+
+http://localhost:3000
+
+You should see the home page of the Online Examination System.
+
+Using the Application
+
+http://localhost:3000/index.html
+
+After logging in, teachers can manage exams, add questions, and assign exams to students.
+Student Operations
+
+After logging in, students can view assigned exams and take exams.
+Logging Out
+
+To log out, send a POST request to /logout.
+
+Troubleshooting
+
+Port Already in Use: If port 3000 is already in use, change the port number in app.js.
+Database Connection Issues: Ensure your MySQL server is running and the connection details in app.js are correct.
+Dependencies Issues: Ensure all Node.js dependencies are installed by running npm install.
+
+For further assistance, please refer to the project documentation or contact the project maintainers.

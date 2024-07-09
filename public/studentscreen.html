@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Screen</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: brown;
+            padding: 10px 20px;
+            color: white;
+        }
+
+        #logout-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        #logout-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        h2, h3, h4 {
+            color: #333;
+        }
+
+        #exam-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #exam-list li {
+            border: 1px solid #ddd;
+            margin: 5px 0;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        #exam-list li:hover {
+            background-color: #f1f1f1;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .question-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .option-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .option {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .option input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        #submit-exam-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        #submit-exam-btn:hover {
+            background-color: #45a049;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div id="student-info">Welcome, <span id="student-name"></span></div>
+        <button id="logout-btn">Logout</button>
+    </div>
+    <div class="content">
+        <h2>Assigned Exams</h2>
+        <ul id="exam-list"></ul>
+
+        <div id="exam-questions" class="hidden">
+            <h3>Exam Questions</h3>
+            <form id="exam-form"></form>
+            <button id="submit-exam-btn">Submit Exam</button>
+            <div id="result" class="hidden"></div>
+        </div>
+    </div>
+
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    let selectedExamId = null;
+
+    fetch('/getStudentName')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById("student-name").textContent = data.name;
+            } else {
+                window.location.href = "/studentlogin";
+            }
+        });
+
+    document.getElementById("logout-btn").addEventListener("click", function () {
+        fetch('/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.href = "/";
+            } else {
+                alert("Logout failed");
+            }
+        });
+    });
+
+    fetch('/getAssignedExams')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                var examList = document.getElementById("exam-list");
+                data.exams.forEach(function (exam) {
+                    var li = document.createElement("li");
+                    li.textContent = `${exam.subject} - ${exam.date} - ${exam.time}`;
+                    li.setAttribute("data-exam-id", exam.exam_id);
+                    li.addEventListener("click", function () {
+                        selectedExamId = exam.exam_id;
+                        loadExamQuestions(selectedExamId);
+                    });
+                    examList.appendChild(li);
+                });
+            }
+        });
+
+    function loadExamQuestions(examId) {
+        fetch(`/getQuestions/${examId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    var examForm = document.getElementById("exam-form");
+                    examForm.innerHTML = "";
+                    data.questions.forEach(function (question, index) {
+                        var questionContainer = document.createElement("div");
+                        questionContainer.classList.add("question-container");
+
+                        var questionLabel = document.createElement("label");
+                        questionLabel.textContent = `Q${index + 1}: ${question.Qtest}`;
+                        questionContainer.appendChild(questionLabel);
+
+                        ['a', 'b', 'c', 'd'].forEach(function (option) {
+                            var optionContainer = document.createElement("div");
+                            optionContainer.classList.add("option-container");
+
+                            var optionDiv = document.createElement("div");
+                            optionDiv.classList.add("option");
+
+                            var optionCheckbox = document.createElement("input");
+                            optionCheckbox.type = "checkbox";
+                            optionCheckbox.name = `question_${question.question_id}`;
+                            optionCheckbox.value = option.toUpperCase();
+                            optionDiv.appendChild(optionCheckbox);
+
+                            var optionLabel = document.createElement("label");
+                            optionLabel.textContent = question[`op_${option}`];
+                            optionDiv.appendChild(optionLabel);
+
+                            optionContainer.appendChild(optionDiv);
+                            questionContainer.appendChild(optionContainer);
+                        });
+
+                        examForm.appendChild(questionContainer);
+                    });
+
+                    document.getElementById("exam-questions").classList.remove("hidden");
+                } else {
+                    alert("Failed to load questions");
+                }
+            })
+            .catch(error => {
+                console.error('Error loading questions:', error);
+                alert("Error loading questions");
+            });
+    }
+
+    document.getElementById("submit-exam-btn").addEventListener("click", function () {
+        var examForm = document.getElementById("exam-form");
+        var formData = new FormData(examForm);
+        var answers = {};
+        formData.forEach((value, key) => {
+            if (!answers[key]) {
+                answers[key] = [];
+            }
+            answers[key].push(value);
+        });
+
+        fetch('/submitExam', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ examId: selectedExamId, answers: answers })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    var resultDiv = document.getElementById("result");
+                    resultDiv.textContent = `Your score: ${data.score}`;
+                    resultDiv.classList.remove("hidden");
+                } else {
+                    alert("Failed to submit exam");
+                }
+            });
+    });
+});
+    </script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Exam Selection</title>
+    <link rel="stylesheet" href="styleteacher.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: brown;
+            padding: 10px 20px;
+            color: white;
+        }
+
+        #logout-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        #logout-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        h2, h3, h4 {
+            color: #333;
+        }
+
+        #exam-select, #student-select, #question, #choice1, #choice2, #choice3, #choice4, #points {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #questions {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #questions li {
+            border: 1px solid #ddd;
+            margin: 5px 0;
+            padding: 10px;
+        }
+
+        .delete-question-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .delete-question-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .correct-answer {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div id="teacher-info">Welcome, <span id="teacher-name"></span></div>
+        <button id="logout-btn">Logout</button>
+    </div>
+    <div class="content">
+        <h2>Exams</h2>
+        <select id="exam-select">
+            <option value="" disabled selected>Choose Exam</option>
+        </select>
+
+        <div id="exam-questions" class="hidden">
+            <h3>Exam Questions</h3>
+            <form id="question-form">
+                <div class="form-group">
+                    <label for="question">Question:</label>
+                    <textarea id="question" name="question" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="choice1">Option A:</label>
+                    <input type="text" id="choice1" name="choice1" required>
+                    <input type="radio" name="correct" value="A" required> Correct Answer
+                </div>
+                <div class="form-group">
+                    <label for="choice2">Option B:</label>
+                    <input type="text" id="choice2" name="choice2" required>
+                    <input type="radio" name="correct" value="B" required> Correct Answer
+                </div>
+                <div class="form-group">
+                    <label for="choice3">Option C:</label>
+                    <input type="text" id="choice3" name="choice3" required>
+                    <input type="radio" name="correct" value="C" required> Correct Answer
+                </div>
+                <div class="form-group">
+                    <label for="choice4">Option D:</label>
+                    <input type="text" id="choice4" name="choice4" required>
+                    <input type="radio" name="correct" value="D" required> Correct Answer
+                </div>
+                <div class="form-group">
+                    <label for="points">Points:</label>
+                    <input type="number" id="points" name="points" required>
+                </div>
+                <button type="button" id="add-question-btn">Add Question</button>
+            </form>
+            <div id="question-list">
+                <h4>Questions:</h4>
+                <ul id="questions"></ul>
+            </div>
+        </div>
+
+        <h2>Assign Students to Exams</h2>
+        <select id="student-select">
+            <option value="" disabled selected>Choose Student</option>
+        </select>
+        <button type="button" id="assign-student-btn">Assign Student to Exam</button>
+
+        <div id="assigned-students" class="hidden">
+            <h3>Assigned Students</h3>
+            <ul id="student-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let selectedExamId = null;
+
+            fetch('/getTeacherName')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById("teacher-name").textContent = data.name;
+                    } else {
+                        window.location.href = "/teacherlogin";
+                    }
+                });
+
+            document.getElementById("logout-btn").addEventListener("click", function () {
+                fetch('/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.href = "/";
+                    } else {
+                        alert("Logout failed");
+                    }
+                });
+            });
+
+            fetch('/getExams')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        var examSelect = document.getElementById("exam-select");
+                        data.exams.forEach(function (exam) {
+                            var option = document.createElement("option");
+                            option.value = exam.exam_id;
+                            option.textContent = `${exam.subject} - ${exam.date}`;
+                            examSelect.appendChild(option);
+                        });
+
+                        examSelect.addEventListener("change", function () {
+                            selectedExamId = this.value;
+                            loadExamQuestions(selectedExamId);
+                        });
+                    }
+                });
+
+            function loadExamQuestions(examId) {
+                fetch(`/getQuestions/${examId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const questionList = document.getElementById("questions");
+                            questionList.innerHTML = "";
+                            data.questions.forEach(question => {
+                                const li = document.createElement("li");
+                                li.innerHTML = `
+                                    <strong>${question.Qtest}</strong><br>
+                                    A: ${question.op_a}<br>
+                                    B: ${question.op_b}<br>
+                                    C: ${question.op_c}<br>
+                                    D: ${question.op_d}<br>
+                                    <span class="correct-answer">Correct Answer: ${question.CorAnswer}</span><br>
+                                    Points: ${question.points}
+                                    <button class="delete-question-btn" data-id="${question.question_id}">Delete</button>
+                                `;
+                                questionList.appendChild(li);
+                            });
+
+                            document.querySelectorAll(".delete-question-btn").forEach(btn => {
+                                btn.addEventListener("click", function () {
+                                    const questionId = this.getAttribute("data-id");
+                                    fetch(`/deleteQuestion/${questionId}`, {
+                                        method: 'DELETE'
+                                    }).then(response => response.json())
+                                        .then(data => {
+                                            if (data.success) {
+                                                loadExamQuestions(selectedExamId);
+                                            } else {
+                                                alert("Failed to delete question");
+                                            }
+                                        });
+                                });
+                            });
+
+                            document.getElementById("exam-questions").classList.remove("hidden");
+                        } else {
+                            alert("Failed to load questions");
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading questions:', error);
+                        alert("Error loading questions");
+                    });
+            }
+
+            document.getElementById("add-question-btn").addEventListener("click", function () {
+                const formData = new FormData(document.getElementById("question-form"));
+                const data = {};
+                formData.forEach((value, key) => {
+                    data[key] = value;
+                });
+                data.exam_id = selectedExamId;
+
+                fetch('/addQuestion', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                }).then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            loadExamQuestions(selectedExamId);
+                        } else {
+                            alert("Failed to add question");
+                        }
+                    });
+            });
+
+            fetch('/getStudents')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        var studentSelect = document.getElementById("student-select");
+                        studentSelect.innerHTML = '<option value="" disabled selected>Choose Student</option>';
+                        data.students.forEach(function (student) {
+                            var option = document.createElement("option");
+                            option.value = student.student_id;
+                            option.textContent = `${student.Fname} ${student.Lname} (${student.e_mail})`;
+                            studentSelect.appendChild(option);
+                        });
+                    }
+                });
+
+            document.getElementById("assign-student-btn").addEventListener("click", function () {
+                const selectedStudentId = document.getElementById("student-select").value;
+                if (selectedExamId && selectedStudentId) {
+                    fetch('/assignStudentToExam', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            exam_id: selectedExamId,
+                            student_id: selectedStudentId
+                        })
+                    }).then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert("Student assigned to exam successfully");
+                            } else {
+                                alert("Failed to assign student to exam");
+                            }
+                        });
+                } else {
+                    alert("Please select both an exam and a student");
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: brown;
+    padding: 10px 20px;
+    color: white;
+}
+
+#logout-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+#logout-btn:hover {
+    background-color: #d32f2f;
+}
+
+.content {
+    padding: 20px;
+}
+
+h2, h3, h4 {
+    color: #333;
+}
+
+#exam-select, #question, #choice1, #choice2, #choice3, #choice4, #points {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 16px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.hidden {
+    display: none;
+}
+
+#questions {
+    list-style-type: none;
+    padding: 0;
+}
+
+#questions li {
+    border: 1px solid #ddd;
+    margin: 5px 0;
+    padding: 10px;
+}
+.delete-question-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    float: right; 
+
+}
+
+.delete-question-btn:hover {
+    background-color: #d32f2f;
+}
+
+.correct-answer {
+    font-weight: bold;
+}
